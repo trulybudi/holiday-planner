@@ -1,8 +1,9 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Holiday } from '@/types';
 import { validateDate } from '@/lib/utils/helpers';
+import { useUser } from '@/lib/hooks/useAuth';
 
 interface HolidayFormProps {
   onSubmit: (holiday: Omit<Holiday, 'id' | 'userId' | 'createdAt' | 'updatedAt'>) => Promise<void>;
@@ -11,6 +12,7 @@ interface HolidayFormProps {
 }
 
 export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: HolidayFormProps) => {
+  const { user } = useUser();
   const [formData, setFormData] = useState({
     title: initialData?.title || '',
     destination: initialData?.destination || '',
@@ -22,6 +24,37 @@ export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: Holida
 
   const [error, setError] = useState<string | null>(null);
   const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+  const [destinations, setDestinations] = useState<Array<{ id: string; name: string }>>([]);
+  const [showDestinationDropdown, setShowDestinationDropdown] = useState(false);
+  const [isLoadingDestinations, setIsLoadingDestinations] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      fetchDestinations();
+    }
+  }, [user?.id]);
+
+  const fetchDestinations = async () => {
+    setIsLoadingDestinations(true);
+    try {
+      const response = await fetch('/api/destinations', {
+        headers: { 'x-user-id': user?.id || '' },
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setDestinations(data.destinations || []);
+      }
+    } catch (err) {
+      console.error('Failed to fetch destinations:', err);
+    } finally {
+      setIsLoadingDestinations(false);
+    }
+  };
+
+  const handleSelectDestination = (destination: string) => {
+    setFormData({ ...formData, destination });
+    setShowDestinationDropdown(false);
+  };
 
   const generateDescription = async () => {
     if (!formData.title.trim() || !formData.destination.trim()) {
@@ -124,17 +157,42 @@ export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: Holida
 
       <div className="mb-4">
         <label htmlFor="destination" className="block text-gray-700 font-semibold mb-2">
-          Destination *
+          Destination * (Select or Type)
         </label>
-        <input
-          id="destination"
-          type="text"
-          value={formData.destination}
-          onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-          className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
-          placeholder="e.g., Paris, France"
-          required
-        />
+        <div className="relative">
+          <input
+            id="destination"
+            type="text"
+            value={formData.destination}
+            onChange={(e) => {
+              setFormData({ ...formData, destination: e.target.value });
+              setShowDestinationDropdown(true);
+            }}
+            onFocus={() => setShowDestinationDropdown(true)}
+            className="w-full px-4 py-2 border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+            placeholder="e.g., Paris, France"
+            required
+          />
+          
+          {showDestinationDropdown && destinations.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10 max-h-48 overflow-y-auto">
+              {destinations
+                .filter((d) =>
+                  d.name.toLowerCase().includes(formData.destination.toLowerCase())
+                )
+                .map((dest) => (
+                  <button
+                    key={dest.id}
+                    type="button"
+                    onClick={() => handleSelectDestination(dest.name)}
+                    className="w-full text-left px-4 py-2 hover:bg-blue-50 border-b border-gray-200 last:border-b-0"
+                  >
+                    {dest.name}
+                  </button>
+                ))}
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="grid grid-cols-2 gap-4 mb-4">

@@ -18,6 +18,19 @@ CREATE TABLE holidays (
   updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
 );
 
+-- Create destinations table
+CREATE TABLE destinations (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+  name TEXT NOT NULL,
+  description TEXT,
+  country TEXT,
+  usage_count INT DEFAULT 1,
+  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+  UNIQUE(user_id, name)
+);
+
 -- Create itineraries table
 CREATE TABLE itineraries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -69,6 +82,7 @@ CREATE TABLE travel_companions (
 
 -- Create indexes for better performance
 CREATE INDEX idx_holidays_user_id ON holidays(user_id);
+CREATE INDEX idx_destinations_user_id ON destinations(user_id);
 CREATE INDEX idx_itineraries_holiday_id ON itineraries(holiday_id);
 CREATE INDEX idx_expenses_holiday_id ON expenses(holiday_id);
 CREATE INDEX idx_accommodations_holiday_id ON accommodations(holiday_id);
@@ -76,6 +90,7 @@ CREATE INDEX idx_travel_companions_holiday_id ON travel_companions(holiday_id);
 
 -- Enable Row Level Security (RLS)
 ALTER TABLE holidays ENABLE ROW LEVEL SECURITY;
+ALTER TABLE destinations ENABLE ROW LEVEL SECURITY;
 ALTER TABLE itineraries ENABLE ROW LEVEL SECURITY;
 ALTER TABLE expenses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE accommodations ENABLE ROW LEVEL SECURITY;
@@ -92,6 +107,19 @@ CREATE POLICY "Users can update their own holidays" ON holidays
   FOR UPDATE USING (auth.uid() = user_id);
 
 CREATE POLICY "Users can delete their own holidays" ON holidays
+  FOR DELETE USING (auth.uid() = user_id);
+
+-- Create RLS policies for destinations
+CREATE POLICY "Users can view their own destinations" ON destinations
+  FOR SELECT USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can create destinations" ON destinations
+  FOR INSERT WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users can update their own destinations" ON destinations
+  FOR UPDATE USING (auth.uid() = user_id);
+
+CREATE POLICY "Users can delete their own destinations" ON destinations
   FOR DELETE USING (auth.uid() = user_id);
 
 -- Create RLS policies for itineraries
