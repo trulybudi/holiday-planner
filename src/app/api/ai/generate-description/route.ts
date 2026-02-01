@@ -34,7 +34,7 @@ Write a short, enthusiastic description (2-3 sentences) that captures the essenc
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'llama-3.1-70b-versatile',
+        model: 'llama-3.1-8b-instant',
         messages: [
           {
             role: 'user',
