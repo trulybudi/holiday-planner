@@ -171,11 +171,11 @@ export default function HolidayDetailsPage() {
 
       {/* Coming Soon */}
       <div className="mt-12 grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="bg-blue-50 rounded-lg p-6 border-2 border-blue-200">
+        <Link href={`/holidays/${holiday.id}/itineraries`} className="bg-blue-50 rounded-lg p-6 border-2 border-blue-200 hover:shadow-lg transition cursor-pointer">
           <h3 className="text-xl font-semibold text-gray-900 mb-2">📅 Itineraries</h3>
           <p className="text-gray-600">Plan day-by-day activities</p>
-          <p className="text-sm text-gray-500 mt-2">Coming soon</p>
-        </div>
+          <p className="text-sm text-blue-600 mt-2 font-semibold">View →</p>
+        </Link>
         <div className="bg-green-50 rounded-lg p-6 border-2 border-green-200">
           <h3 className="text-xl font-semibold text-gray-900 mb-2">💰 Expenses</h3>
           <p className="text-gray-600">Track your spending</p>

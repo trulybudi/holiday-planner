@@ -23,7 +23,7 @@ export type Holiday = {
 export type Itinerary = {
   id: string;
   holidayId: string;
-  dayNumber: number;
+  date: string; // YYYY-MM-DD format, must be between holiday start and end date
   activity: string;
   location?: string;
   startTime?: string;

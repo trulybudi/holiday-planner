@@ -32,7 +32,7 @@ CREATE TABLE destinations (
 CREATE TABLE itineraries (
   id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   holiday_id UUID NOT NULL REFERENCES holidays(id) ON DELETE CASCADE,
-  day_number INT NOT NULL,
+  date DATE NOT NULL,
   activity TEXT NOT NULL,
   location TEXT,
   start_time TIME,

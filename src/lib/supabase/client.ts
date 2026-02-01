@@ -40,7 +40,7 @@ export type Database = {
         Row: {
           id: string;
           holiday_id: string;
-          day_number: number;
+          date: string;
           activity: string;
           location: string | null;
           start_time: string | null;
