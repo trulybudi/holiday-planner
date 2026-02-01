@@ -97,6 +97,7 @@ export default function NewItineraryPage() {
         isLoading={isSubmitting}
         holidayStartDate={holiday.startDate}
         holidayEndDate={holiday.endDate}
+        destination={holiday.destination}
       />
     </div>
   );

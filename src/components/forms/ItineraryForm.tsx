@@ -9,6 +9,7 @@ interface ItineraryFormProps {
   isLoading?: boolean;
   holidayStartDate: string; // YYYY-MM-DD
   holidayEndDate: string; // YYYY-MM-DD
+  destination?: string; // Trip destination for AI context
 }
 
 export const ItineraryForm = ({
@@ -17,6 +18,7 @@ export const ItineraryForm = ({
   isLoading = false,
   holidayStartDate,
   holidayEndDate,
+  destination = '',
 }: ItineraryFormProps) => {
   const [formData, setFormData] = useState({
     date: initialData?.date || '',
@@ -28,6 +30,61 @@ export const ItineraryForm = ({
   });
 
   const [error, setError] = useState<string | null>(null);
+  const [suggestingField, setSuggestingField] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Record<string, string>>({});
+
+  const handleAISuggest = async (field: 'activity' | 'location' | 'notes') => {
+    if (!destination || !formData.date) {
+      setError('Please select a date and destination first');
+      return;
+    }
+
+    setSuggestingField(field);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/ai/suggest-itinerary', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          destination,
+          date: formData.date,
+          field,
+          currentValue: formData[field as keyof typeof formData] || '',
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setSuggestions((prev) => ({
+          ...prev,
+          [field]: data.suggestion,
+        }));
+      } else {
+        setError(data.error || 'Failed to generate suggestion');
+      }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate suggestion');
+    } finally {
+      setSuggestingField(null);
+    }
+  };
+
+  const applySuggestion = (field: 'activity' | 'location' | 'notes') => {
+    const suggestion = suggestions[field];
+    if (suggestion) {
+      setFormData((prev) => ({
+        ...prev,
+        [field]: suggestion,
+      }));
+      setSuggestions((prev) => {
+        const { [field]: _, ...rest } = prev;
+        return rest;
+      });
+    }
+  };
+  const [suggestingField, setSuggestingField] = useState<string | null>(null);
+  const [suggestions, setSuggestions] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -118,9 +175,22 @@ export const ItineraryForm = ({
 
       {/* Activity */}
       <div>
-        <label htmlFor="activity" className="block text-sm font-medium text-gray-700 mb-1">
-          Activity *
-        </label>
+        <div className="flex justify-between items-center mb-1">
+          <label htmlFor="activity" className="block text-sm font-medium text-gray-700">
+            Activity *
+          </label>
+          {destination && (
+            <button
+              type="button"
+              onClick={() => handleAISuggest('activity')}
+              disabled={suggestingField === 'activity' || !formData.date}
+              className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Generate AI suggestion for activity"
+            >
+              {suggestingField === 'activity' ? '✨ Suggesting...' : '✨ Suggest'}
+            </button>
+          )}
+        </div>
         <input
           type="text"
           id="activity"
@@ -131,13 +201,40 @@ export const ItineraryForm = ({
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           disabled={isLoading}
         />
+        {suggestions.activity && (
+          <div className="mt-2 p-3 bg-blue-50 rounded border border-blue-200">
+            <p className="text-sm text-gray-600 mb-2">
+              💡 AI Suggestion: <strong>{suggestions.activity}</strong>
+            </p>
+            <button
+              type="button"
+              onClick={() => applySuggestion('activity')}
+              className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            >
+              Use This
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Location */}
       <div>
-        <label htmlFor="location" className="block text-sm font-medium text-gray-700 mb-1">
-          Location (Optional)
-        </label>
+        <div className="flex justify-between items-center mb-1">
+          <label htmlFor="location" className="block text-sm font-medium text-gray-700">
+            Location (Optional)
+          </label>
+          {destination && (
+            <button
+              type="button"
+              onClick={() => handleAISuggest('location')}
+              disabled={suggestingField === 'location' || !formData.date}
+              className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Generate AI suggestion for location"
+            >
+              {suggestingField === 'location' ? '✨ Suggesting...' : '✨ Suggest'}
+            </button>
+          )}
+        </div>
         <input
           type="text"
           id="location"
@@ -148,6 +245,20 @@ export const ItineraryForm = ({
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           disabled={isLoading}
         />
+        {suggestions.location && (
+          <div className="mt-2 p-3 bg-blue-50 rounded border border-blue-200">
+            <p className="text-sm text-gray-600 mb-2">
+              💡 AI Suggestion: <strong>{suggestions.location}</strong>
+            </p>
+            <button
+              type="button"
+              onClick={() => applySuggestion('location')}
+              className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            >
+              Use This
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Time Range */}
@@ -189,9 +300,22 @@ export const ItineraryForm = ({
 
       {/* Notes */}
       <div>
-        <label htmlFor="notes" className="block text-sm font-medium text-gray-700 mb-1">
-          Notes (Optional)
-        </label>
+        <div className="flex justify-between items-center mb-1">
+          <label htmlFor="notes" className="block text-sm font-medium text-gray-700">
+            Notes (Optional)
+          </label>
+          {destination && (
+            <button
+              type="button"
+              onClick={() => handleAISuggest('notes')}
+              disabled={suggestingField === 'notes' || !formData.date}
+              className="text-xs bg-blue-50 text-blue-600 px-2 py-1 rounded hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed"
+              title="Generate AI suggestion for notes/tips"
+            >
+              {suggestingField === 'notes' ? '✨ Suggesting...' : '✨ Suggest'}
+            </button>
+          )}
+        </div>
         <textarea
           id="notes"
           name="notes"
@@ -202,6 +326,20 @@ export const ItineraryForm = ({
           className="w-full px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
           disabled={isLoading}
         />
+        {suggestions.notes && (
+          <div className="mt-2 p-3 bg-blue-50 rounded border border-blue-200">
+            <p className="text-sm text-gray-600 mb-2">
+              💡 AI Tip: <strong>{suggestions.notes}</strong>
+            </p>
+            <button
+              type="button"
+              onClick={() => applySuggestion('notes')}
+              className="text-xs bg-blue-600 text-white px-3 py-1 rounded hover:bg-blue-700"
+            >
+              Use This
+            </button>
+          </div>
+        )}
       </div>
 
       {/* Submit Button */}
