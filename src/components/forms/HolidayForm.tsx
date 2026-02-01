@@ -21,6 +21,42 @@ export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: Holida
   });
 
   const [error, setError] = useState<string | null>(null);
+  const [isGeneratingDescription, setIsGeneratingDescription] = useState(false);
+
+  const generateDescription = async () => {
+    if (!formData.title.trim() || !formData.destination.trim()) {
+      setError('Please fill in Title and Destination first');
+      return;
+    }
+
+    setIsGeneratingDescription(true);
+    setError(null);
+
+    try {
+      const response = await fetch('/api/ai/generate-description', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          title: formData.title,
+          destination: formData.destination,
+          startDate: formData.startDate,
+          endDate: formData.endDate,
+        }),
+      });
+
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.error || 'Failed to generate description');
+      }
+
+      const data = await response.json();
+      setFormData({ ...formData, description: data.description });
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to generate description');
+    } finally {
+      setIsGeneratingDescription(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -147,9 +183,19 @@ export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: Holida
       </div>
 
       <div className="mb-6">
-        <label htmlFor="description" className="block text-gray-700 font-semibold mb-2">
-          Description (Optional)
-        </label>
+        <div className="flex justify-between items-center mb-2">
+          <label htmlFor="description" className="block text-gray-700 font-semibold">
+            Description (Optional)
+          </label>
+          <button
+            type="button"
+            onClick={generateDescription}
+            disabled={isGeneratingDescription || isLoading}
+            className="px-3 py-1 text-sm bg-purple-600 text-white rounded hover:bg-purple-700 disabled:bg-gray-400 font-semibold"
+          >
+            {isGeneratingDescription ? 'Generating...' : '✨ AI Generate'}
+          </button>
+        </div>
         <textarea
           id="description"
           value={formData.description}
