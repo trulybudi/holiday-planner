@@ -18,15 +18,18 @@ export async function POST(request: NextRequest) {
 
     const fieldPrompts: Record<string, string> = {
       activity: `You are a travel assistant. Suggest a great activity or thing to do in ${destination} on ${date}. 
-${currentValue ? `The user is already thinking about: "${currentValue}". Suggest a similar or complementary activity.` : 'Suggest a popular tourist activity or local experience.'}
+The activity should be specific to ${destination} and respect the trip location context.
+${currentValue ? `The user is already thinking about: "${currentValue}". Suggest a similar or complementary activity specific to ${destination}.` : 'Suggest a popular tourist activity, local experience, or attraction specifically in ${destination}.'}
 Respond with ONLY the activity name, nothing else. Max 50 characters.`,
 
       location: `You are a travel assistant. Suggest a specific location or venue in ${destination} to visit on ${date}.
-${currentValue ? `Related to: "${currentValue}". Suggest where to do this activity.` : 'Suggest a popular landmark, restaurant, museum, or attraction.'}
+This must be a real place within ${destination} city/area, not a general location.
+${currentValue ? `For activity: "${currentValue}". Suggest a specific venue or landmark in ${destination} where this activity can be done.` : 'Suggest a specific landmark, restaurant, museum, or attraction located in ${destination}.'}
 Respond with ONLY the location name, nothing else. Max 50 characters.`,
 
       notes: `You are a travel assistant. Suggest helpful tips or notes for visiting ${destination} on ${date}.
-${currentValue ? `For activity: "${currentValue}". Suggest tips like best time to visit, what to bring, etc.` : 'Suggest general travel tips.'}
+Tips should be relevant to ${destination} specifically.
+${currentValue ? `For activity: "${currentValue}" in ${destination}. Suggest tips like best time to visit, what to bring, local customs, etc.` : 'Suggest practical travel tips specifically for visiting ${destination}.'}
 Respond with ONLY practical tips, nothing else. Max 100 characters.`,
     };
 
@@ -38,7 +41,7 @@ Respond with ONLY practical tips, nothing else. Max 100 characters.`,
       );
     }
 
-    const message = await groq.messages.create({
+    const completion = await groq.chat.completions.create({
       model: 'llama-3.1-8b-instant',
       max_tokens: 150,
       messages: [
@@ -49,10 +52,7 @@ Respond with ONLY practical tips, nothing else. Max 100 characters.`,
       ],
     });
 
-    const suggestion =
-      message.content[0].type === 'text'
-        ? message.content[0].text.trim()
-        : 'Unable to generate suggestion';
+    const suggestion = completion.choices[0]?.message?.content?.trim() || 'Unable to generate suggestion';
 
     return NextResponse.json({
       success: true,

@@ -10,7 +10,7 @@ const supabase = createClient(
   supabaseServiceKey || supabaseAnonKey!
 );
 
-interface Destination {
+export interface Destination {
   id: string;
   name: string;
   description?: string;
