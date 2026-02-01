@@ -1,6 +1,5 @@
 import { supabase } from './client';
 import { Holiday, ApiResponse } from '@/types';
-import { destinationService } from './destination.service';
 
 // Mapping function to convert Supabase snake_case to camelCase
 const mapHolidayData = (data: any): Holiday => {
@@ -57,9 +56,6 @@ export const holidayService = {
 
   async create(userId: string, holiday: Omit<Holiday, 'id' | 'userId' | 'createdAt' | 'updatedAt'>): Promise<ApiResponse<Holiday>> {
     try {
-      // Save destination for future selection
-      await destinationService.findOrCreate(userId, holiday.destination);
-
       const { data, error } = await supabase
         .from('holidays')
         .insert({
@@ -86,18 +82,6 @@ export const holidayService = {
 
   async update(id: string, updates: Partial<Holiday>): Promise<ApiResponse<Holiday>> {
     try {
-      // Get the current holiday to get userId for destination tracking
-      const { data: currentHoliday } = await supabase
-        .from('holidays')
-        .select('user_id')
-        .eq('id', id)
-        .single();
-
-      // Save destination if it's being updated
-      if (updates.destination && currentHoliday) {
-        await destinationService.findOrCreate(currentHoliday.user_id, updates.destination);
-      }
-
       const { data, error } = await supabase
         .from('holidays')
         .update({

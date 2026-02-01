@@ -3,16 +3,7 @@ import { destinationService } from '@/lib/supabase/destination.service';
 
 export async function GET(request: NextRequest) {
   try {
-    const userId = request.headers.get('x-user-id');
-
-    if (!userId) {
-      return NextResponse.json(
-        { error: 'User ID is required' },
-        { status: 400 }
-      );
-    }
-
-    const result = await destinationService.getAll(userId);
+    const result = await destinationService.getAll();
 
     if (!result.success) {
       return NextResponse.json(

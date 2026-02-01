@@ -37,9 +37,7 @@ export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: Holida
   const fetchDestinations = async () => {
     setIsLoadingDestinations(true);
     try {
-      const response = await fetch('/api/destinations', {
-        headers: { 'x-user-id': user?.id || '' },
-      });
+      const response = await fetch('/api/destinations');
       if (response.ok) {
         const data = await response.json();
         setDestinations(data.destinations || []);
