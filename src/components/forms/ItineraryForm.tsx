@@ -83,8 +83,6 @@ export const ItineraryForm = ({
       });
     }
   };
-  const [suggestingField, setSuggestingField] = useState<string | null>(null);
-  const [suggestions, setSuggestions] = useState<Record<string, string>>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
