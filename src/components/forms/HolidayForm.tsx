@@ -29,10 +29,15 @@ export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: Holida
   const [isLoadingDestinations, setIsLoadingDestinations] = useState(false);
 
   useEffect(() => {
-    if (user?.id) {
-      fetchDestinations();
+    fetchDestinations();
+  }, []);
+
+  const handleClickOutside = (e: React.MouseEvent) => {
+    const destinationDiv = document.getElementById('destination-container');
+    if (destinationDiv && !destinationDiv.contains(e.target as Node)) {
+      setShowDestinationDropdown(false);
     }
-  }, [user?.id]);
+  };
 
   const fetchDestinations = async () => {
     setIsLoadingDestinations(true);
@@ -133,7 +138,7 @@ export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: Holida
   };
 
   return (
-    <form onSubmit={handleSubmit} className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow">
+    <form onSubmit={handleSubmit} onClick={handleClickOutside} className="max-w-2xl mx-auto p-6 bg-white rounded-lg shadow">
       <h2 className="text-2xl font-bold mb-6 text-gray-800">{initialData ? 'Edit Holiday' : 'Create New Holiday'}</h2>
 
       {error && <div className="mb-4 p-4 bg-red-100 text-red-700 rounded">{error}</div>}
@@ -157,7 +162,7 @@ export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: Holida
         <label htmlFor="destination" className="block text-gray-700 font-semibold mb-2">
           Destination * (Select or Type)
         </label>
-        <div className="relative">
+        <div className="relative" id="destination-container">
           <input
             id="destination"
             type="text"
@@ -176,7 +181,7 @@ export const HolidayForm = ({ onSubmit, initialData, isLoading = false }: Holida
             <div className="absolute top-full left-0 right-0 mt-1 bg-white border border-gray-300 rounded shadow-lg z-10 max-h-48 overflow-y-auto">
               {destinations
                 .filter((d) =>
-                  d.name.toLowerCase().includes(formData.destination.toLowerCase())
+                  formData.destination === '' || d.name.toLowerCase().includes(formData.destination.toLowerCase())
                 )
                 .map((dest) => (
                   <button
